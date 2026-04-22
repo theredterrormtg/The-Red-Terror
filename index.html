@@ -399,7 +399,7 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
 .about-charity-btn{display:inline-block;margin-top:8px;padding:8px 18px;border:1px solid var(--blue);border-radius:8px;color:var(--blue3);font-family:'Cinzel',serif;font-size:12px;text-decoration:none;transition:all 0.2s;letter-spacing:0.5px}
 .about-charity-btn:hover{background:var(--bg3)}
 .about-mission{text-align:center;padding:1.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:12px;margin-bottom:1.5rem}
-.about-mission-label{font-family:'Cinzel',serif;font-size:11px;color:var(--blue2);letter-spacing:2px;margin-bottom:10px}
+.about-mission-label{font-family:'Cinzel',serif;font-size:15px;color:var(--blue3);letter-spacing:0.5px;margin-bottom:10px;font-weight:500}
 .about-mission p{font-size:18px;color:var(--text);font-style:italic;line-height:1.6}
 .about-connect{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
 .about-connect h3{font-family:'Cinzel',serif;font-size:15px;color:var(--blue3);margin-bottom:1rem;letter-spacing:0.5px}
@@ -576,6 +576,10 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
       <div class="connect-item">
         <div class="connect-label">Nonprofit</div>
         <div class="connect-val">KaIND Giving</div>
+      </div>
+      <div class="connect-item" style="cursor:pointer" onclick="checkAdmin()">
+        <div class="connect-label">Admin</div>
+        <div class="connect-val" style="font-size:12px">&nbsp;</div>
       </div>
     </div>
   </div>
@@ -777,7 +781,7 @@ function renderShop() {
     const imgSrc = (l.imgs && l.imgs[0]) ? l.imgs[0] : (l.img || '');
     return `<div class="product-card">
       <div class="product-img" style="display:flex">
-        ${imgSrc ? `<img src="${imgSrc}" alt="${l.name}" loading="lazy" onclick="openLightbox('${l.id}')" style="cursor:pointer">` : `<span class="no-img" onclick="openLightbox('${l.id}')" style="cursor:pointer">&#127183;</span>`}
+        ${imgSrc ? `<img src="${imgSrc}" alt="${l.name}" loading="lazy" style="cursor:pointer;width:100%;height:100%;object-fit:cover" onclick="openLightbox('${l.id}')">` : `<span class="no-img" style="cursor:pointer" onclick="openLightbox('${l.id}')">&#127183;</span>`}
         ${l.finish && badgeMap[l.finish] ? `<span class="badge ${badgeMap[l.finish]}">${badgeLbl[l.finish]}</span>` : ''}
         ${l.sold ? '<div class="sold-overlay"><span class="sold-badge">SOLD</span></div>' : ''}
       </div>
