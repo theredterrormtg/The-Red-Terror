@@ -685,7 +685,15 @@ document.getElementById('aboutLogo').src = LOGO_SRC;
 
 /* ---- FIREBASE CONFIG ---- */
 /* Replace the object below with your own Firebase config from the Firebase console */
-const FIREBASE_CONFIG = 'FIREBASE_CONFIG_HERE';
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCYo5WLAIprvGHCgkGztNgZa641Lqq5LCU",
+  authDomain: "red-terror-shop.firebaseapp.com",
+  projectId: "red-terror-shop",
+  storageBucket: "red-terror-shop.firebasestorage.app",
+  messagingSenderId: "519868863504",
+  appId: "1:519868863504:web:ab6b67ab5bd6fab6e5a695",
+  measurementId: "G-S2JS0Y6B4N"
+};
 
 let db = null, storage = null, useCloud = false;
 
@@ -697,7 +705,7 @@ function initFirebase() {
     return;
   }
   try {
-    const cfg = typeof FIREBASE_CONFIG === 'string' ? JSON.parse(FIREBASE_CONFIG) : FIREBASE_CONFIG;
+    const cfg = FIREBASE_CONFIG;
     firebase.initializeApp(cfg);
     db = firebase.firestore();
     storage = firebase.storage();
