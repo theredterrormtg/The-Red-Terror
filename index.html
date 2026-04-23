@@ -923,23 +923,13 @@ async function uploadImgs() {
   for (const p of pendingImgs) {
     if (!p.file && p.dataUrl) { urls.push(p.dataUrl); continue; }
     if (!p.file) continue;
-    if (useCloud && storage) {
-      try {
-        const ref=storage.ref('listings/'+Date.now()+'_'+p.file.name);
-        await ref.put(p.file);
-        const url=await ref.getDownloadURL();
-        urls.push(url);
-        continue;
-      } catch(e) { console.log('Storage upload failed, using base64'); }
-    }
-    // Compress and store as base64
-    const url = await compressImage(p.file, 800);
+    const url = await compressImage(p.file);
     urls.push(url);
   }
   return urls;
 }
 
-function compressImage(file, maxSize) {
+function compressImage(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = e => {
@@ -952,15 +942,14 @@ function compressImage(file, maxSize) {
         else { w = Math.round(w * limit / h); h = limit; }
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.3);
-        console.log('Compressed image size:', Math.round(dataUrl.length/1024) + 'KB');
-        resolve(dataUrl);
+        resolve(canvas.toDataURL('image/jpeg', 0.4));
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
 }
+
 
 async function saveListing() {
   const name=document.getElementById('fName').value.trim();
