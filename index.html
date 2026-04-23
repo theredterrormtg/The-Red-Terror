@@ -947,12 +947,14 @@ function compressImage(file, maxSize) {
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let w = img.width, h = img.height;
-        const limit = 600;
+        const limit = 400;
         if (w > h) { h = Math.round(h * limit / w); w = limit; }
         else { w = Math.round(w * limit / h); h = limit; }
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.5));
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.3);
+        console.log('Compressed image size:', Math.round(dataUrl.length/1024) + 'KB');
+        resolve(dataUrl);
       };
       img.src = e.target.result;
     };
