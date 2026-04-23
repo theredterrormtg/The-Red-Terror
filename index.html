@@ -947,13 +947,12 @@ function compressImage(file, maxSize) {
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let w = img.width, h = img.height;
-        if (w > maxSize || h > maxSize) {
-          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
-          else { w = Math.round(w * maxSize / h); h = maxSize; }
-        }
+        const limit = 600;
+        if (w > h) { h = Math.round(h * limit / w); w = limit; }
+        else { w = Math.round(w * limit / h); h = limit; }
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.75));
+        resolve(canvas.toDataURL('image/jpeg', 0.5));
       };
       img.src = e.target.result;
     };
@@ -973,7 +972,7 @@ async function saveListing() {
     cond:document.getElementById('fCond').value,
     finish:document.getElementById('fFinish').value,
     price:parseFloat(price).toFixed(2),
-    imgs, sold:false, createdAt: Date.now()
+    imgs:imgs, sold:false, createdAt: Date.now()
   };
   if (useCloud && db) {
     try {
