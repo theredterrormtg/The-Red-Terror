@@ -416,10 +416,12 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
         <input type="number" id="fPrice" placeholder="0.00" min="0" step="0.01">
       </div>
       <div class="form-group full">
-        <label>Photo URL</label>
-        <input type="text" id="fImgUrl" placeholder="Paste Imgur image URL here" oninput="previewImgUrl(this)">
-        <div class="img-hint">Upload photo free at <a href="https://imgur.com/upload" target="_blank">imgur.com/upload</a> → right-click image → Copy image address → paste above</div>
-        <div class="img-preview-wrap" id="imgPreviewWrap"></div>
+        <label>Photo URL 1</label>
+        <input type="text" id="fImgUrl" placeholder="Paste Imgur image URL here (ends in .jpg or .png)" oninput="previewImgUrl()">
+        <label style="margin-top:8px">Photo URL 2 (optional)</label>
+        <input type="text" id="fImgUrl2" placeholder="Second photo URL (optional)" oninput="previewImgUrl()">
+        <div class="img-hint">Upload free at <a href="https://imgur.com/upload" target="_blank">imgur.com/upload</a> → right-click the image → Copy image address → paste above. URL must end in .jpg or .png</div>
+        <div class="img-preview-wrap" id="imgPreviewWrap" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
       </div>
     </div>
     <div class="form-actions">
@@ -662,8 +664,9 @@ function openLightbox(id) {
   const l = listings.find(x => x.id==id);
   if (!l) return;
   lightboxId = id;
-  const imgSrc = (l.imgs && l.imgs[0]) ? l.imgs[0] : (l.img||'');
-  document.getElementById('lightboxImg').src = imgSrc || '';
+  const imgs = (l.imgs && l.imgs.length) ? l.imgs : (l.img ? [l.img] : []);
+  const imgSrc = imgs[0] || '';
+  document.getElementById('lightboxImg').src = imgSrc;
   document.getElementById('lightboxName').textContent = l.name;
   document.getElementById('lightboxSet').textContent = (l.set||'') + (l.cond?' · '+l.cond:'');
   document.getElementById('lightboxPrice').textContent = '$' + parseFloat(l.price||0).toFixed(2);
@@ -723,8 +726,13 @@ function openForm(id) {
     document.getElementById('fFinish').value=l.finish||'';
     document.getElementById('fPrice').value=l.price;
     const imgUrl = (l.imgs&&l.imgs[0]) ? l.imgs[0] : (l.img||'');
+    const imgUrl2 = (l.imgs&&l.imgs[1]) ? l.imgs[1] : '';
     document.getElementById('fImgUrl').value=imgUrl;
-    if (imgUrl) document.getElementById('imgPreviewWrap').innerHTML=`<img src="${imgUrl}" class="img-preview">`;
+    document.getElementById('fImgUrl2').value=imgUrl2;
+    let prevHtml = '';
+    if (imgUrl) prevHtml += `<img src="${imgUrl}" class="img-preview">`;
+    if (imgUrl2) prevHtml += `<img src="${imgUrl2}" class="img-preview">`;
+    document.getElementById('imgPreviewWrap').innerHTML=prevHtml;
   } else {
     document.getElementById('fName').value='';
     document.getElementById('fSet').value='';
@@ -737,13 +745,15 @@ function openForm(id) {
   f.scrollIntoView({behavior:'smooth'});
 }
 
-function closeForm() { document.getElementById('addForm').style.display='none'; editingId=null; }
+function closeForm() { document.getElementById('addForm').style.display='none'; editingId=null; document.getElementById('fImgUrl').value=''; document.getElementById('fImgUrl2').value=''; document.getElementById('imgPreviewWrap').innerHTML=''; }
 
-function previewImgUrl(input) {
+function previewImgUrl() {
   const wrap = document.getElementById('imgPreviewWrap');
-  if (input.value) {
-    wrap.innerHTML = `<img src="${input.value}" class="img-preview" onerror="this.style.display='none'">`;
-  } else { wrap.innerHTML=''; }
+  const url1 = document.getElementById('fImgUrl').value.trim();
+  const url2 = document.getElementById('fImgUrl2').value.trim();
+  wrap.innerHTML = '';
+  if (url1) wrap.innerHTML += `<img src="${url1}" class="img-preview" onerror="this.style.display='none'">`;
+  if (url2) wrap.innerHTML += `<img src="${url2}" class="img-preview" onerror="this.style.display='none'">`;
 }
 
 async function saveListing() {
@@ -751,13 +761,15 @@ async function saveListing() {
   const price = document.getElementById('fPrice').value;
   if (!name||!price) { showToast('Name and price are required!'); return; }
   const imgUrl = document.getElementById('fImgUrl').value.trim();
+  const imgUrl2 = document.getElementById('fImgUrl2').value.trim();
+  const imgs = [imgUrl, imgUrl2].filter(Boolean);
   const data = {
     name, set:document.getElementById('fSet').value.trim(),
     cat:document.getElementById('fCat').value,
     cond:document.getElementById('fCond').value,
     finish:document.getElementById('fFinish').value,
     price:parseFloat(price).toFixed(2),
-    imgs: imgUrl ? [imgUrl] : [],
+    imgs,
     sold:false, createdAt:Date.now()
   };
   showToast('Saving...');
