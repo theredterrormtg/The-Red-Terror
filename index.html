@@ -426,6 +426,7 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
 .lightbox-added{background:var(--bg3);border-color:var(--blue);color:var(--blue3)}
 .product-img{cursor:pointer}
 </style>
+<script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
 
@@ -510,13 +511,24 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
       <div class="pay-opts">
         <div class="pay-opt sel-zelle" id="optZelle" onclick="setPay('zelle')">Zelle</div>
         <div class="pay-opt" id="optVenmo" onclick="setPay('venmo')">Venmo</div>
+        <div class="pay-opt" id="optCard" onclick="setPay('card')">💳 Card</div>
       </div>
       <div class="pay-note" id="payNote">Send to <strong>Red@theredterror.com</strong> via Zelle &mdash; include your name.</div>
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeCheckout()">Cancel</button>
-        <button class="btn-confirm" onclick="sendOrder()">Send via email</button>
+        <button class="btn-confirm" id="checkoutActionBtn" onclick="sendOrder()">Send via email</button>
       </div>
       <div class="charity-modal-note">&#9829; 10% of your purchase goes to KaIND Giving</div>
+      <div id="cardInvoiceForm" style="display:none;margin-top:12px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+        <div style="font-size:13px;color:var(--blue3);margin-bottom:10px;font-family:'Cinzel',serif">Enter your details for invoice</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input type="text" id="cardName" placeholder="Your full name" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:14px;font-family:'Crimson Pro',serif;outline:none">
+          <input type="email" id="cardEmail" placeholder="Your email address" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:14px;font-family:'Crimson Pro',serif;outline:none">
+          <div style="font-size:13px;color:var(--text2);font-style:italic">Total: <strong id="cardInvoiceTotal" style="color:var(--gold)"></strong></div>
+          <button onclick="submitCardInvoice()" style="padding:10px;background:var(--red);border:1px solid var(--red2);border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:13px;cursor:pointer">Request Invoice</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;font-style:italic">We'll email you a secure Stripe invoice within a few hours.</div>
+      </div>
       <div class="modal-tiny">Opens your email app with order details pre-filled.</div>
     </div>
   </div>
@@ -650,12 +662,12 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
         <input type="number" id="fPrice" placeholder="0.00" min="0" step="0.01">
       </div>
       <div class="form-group full">
-        <label>Photos (select one or more)</label>
-        <div class="img-upload-area" onclick="document.getElementById('fImgInput').click()">
-          <p>&#128247; Click to upload photo(s)</p>
-          <div class="img-preview-wrap" id="imgPreviews"></div>
-          <input type="file" id="fImgInput" accept="image/*" multiple style="display:none" onchange="previewImgs(this)">
+        <label>Photo URL</label>
+        <input type="text" id="fImgUrl" placeholder="Paste image URL here (from Imgur, Google Photos, etc.)">
+        <div style="margin-top:6px;font-size:11px;color:var(--text3)">
+          Free: upload photo to <a href="https://imgur.com/upload" target="_blank" style="color:var(--blue2)">imgur.com/upload</a>, right-click the image → Copy image address, paste above
         </div>
+        <div id="imgPreviews" style="margin-top:8px"></div>
       </div>
     </div>
     <div class="form-actions">
@@ -834,9 +846,50 @@ function setPay(m) {
   payMethod = m;
   document.getElementById('optZelle').className = 'pay-opt' + (m==='zelle'?' sel-zelle':'');
   document.getElementById('optVenmo').className = 'pay-opt' + (m==='venmo'?' sel-venmo':'');
-  document.getElementById('payNote').innerHTML = m==='zelle'
-    ? 'Send to <strong>Red@theredterror.com</strong> via Zelle &mdash; include your name.'
-    : 'Send to <strong>@theredterror</strong> via Venmo &mdash; include your name.';
+  document.getElementById('optCard').className = 'pay-opt' + (m==='card'?' sel-zelle':'');
+  const btn = document.getElementById('checkoutActionBtn');
+  if (m==='zelle') {
+    document.getElementById('payNote').innerHTML = 'Send to <strong>Red@theredterror.com</strong> via Zelle &mdash; include your name.';
+    btn.textContent = 'Send via email';
+    btn.onclick = sendOrder;
+  } else if (m==='venmo') {
+    document.getElementById('payNote').innerHTML = 'Send to <strong>@theredterror</strong> via Venmo &mdash; include your name.';
+    btn.textContent = 'Send via email';
+    btn.onclick = sendOrder;
+  } else if (m==='card') {
+    document.getElementById('payNote').innerHTML = 'Pay securely by credit or debit card via Stripe.';
+    btn.textContent = 'Pay by card →';
+    btn.onclick = payByCard;
+  }
+}
+
+async function payByCard() {
+  const ids = Object.keys(cart);
+  if (!ids.length) return;
+  const tot = ids.reduce((s,id)=>{ const l=listings.find(x=>x.id==id); return s+(l?parseFloat(l.price||0):0); },0);
+  const lines = ids.map(id=>listings.find(x=>x.id==id).name).join('\n');
+  
+  // Show card invoice form
+  document.getElementById('cardInvoiceForm').style.display='block';
+  document.getElementById('cardInvoiceTotal').textContent = '$'+tot.toFixed(2);
+}
+
+function submitCardInvoice() {
+  const name = document.getElementById('cardName').value.trim();
+  const email = document.getElementById('cardEmail').value.trim();
+  if (!name || !email) { showToast('Please enter your name and email!'); return; }
+  
+  const ids = Object.keys(cart);
+  const tot = ids.reduce((s,id)=>{ const l=listings.find(x=>x.id==id); return s+(l?parseFloat(l.price||0):0); },0);
+  const lines = ids.map(id=>listings.find(x=>x.id==id).name).join('\n');
+  
+  const sub = encodeURIComponent('Card Payment Request — The Red Terror MTG Shop');
+  const body = encodeURIComponent(`Hi Red!\n\nI would like to pay by card for the following order:\n\n${lines}\n\nTotal: $${tot.toFixed(2)}\nName: ${name}\nEmail: ${email}\n\nPlease send me a Stripe invoice. Thank you!`);
+  window.open('mailto:Red@theredterror.com?subject='+sub+'&body='+body);
+  
+  document.getElementById('cardInvoiceForm').style.display='none';
+  closeCheckout();
+  showToast('Request sent! Invoice coming your way soon.');
 }
 
 function sendOrder() {
@@ -887,8 +940,11 @@ function openForm(id) {
     document.getElementById('fFinish').value=l.finish||'';
     document.getElementById('fPrice').value=l.price;
     const imgs = l.imgs||( l.img?[l.img]:[] );
-    imgs.forEach(src=>{ const img=document.createElement('img'); img.src=src; img.className='img-preview'; document.getElementById('imgPreviews').appendChild(img); });
-    pendingImgs = imgs.map(src=>({ dataUrl:src, file:null }));
+    document.getElementById('fImgUrl').value = imgs[0]||'';
+    if (imgs[0]) {
+      const p = document.getElementById('imgPreviews');
+      p.innerHTML = '<img src="'+imgs[0]+'" class="img-preview" style="max-width:120px;max-height:160px;border-radius:6px;border:1px solid var(--border)">';
+    }
   } else {
     document.getElementById('fName').value='';
     document.getElementById('fSet').value='';
@@ -896,6 +952,7 @@ function openForm(id) {
     document.getElementById('fCond').value='NM';
     document.getElementById('fFinish').value='';
     document.getElementById('fPrice').value='';
+    document.getElementById('fImgUrl').value='';
   }
   f.scrollIntoView({behavior:'smooth'});
 }
@@ -956,7 +1013,8 @@ async function saveListing() {
   const price=document.getElementById('fPrice').value;
   if (!name||!price) { showToast('Name and price are required!'); return; }
   showToast('Saving...');
-  const imgs=await uploadImgs();
+  const imgUrl = document.getElementById('fImgUrl').value.trim();
+  const imgs = imgUrl ? [imgUrl] : [];
   const data={
     name, set:document.getElementById('fSet').value.trim(),
     cat:document.getElementById('fCat').value,
@@ -1011,7 +1069,26 @@ async function toggleSold(id) {
 
 function editListing(id) { openForm(id); }
 
+
+const STRIPE_KEY = 'pk_live_51TPjzfRuiQRYwpZeK1Xp06msYINqNxP1WLTa71sfJGjYgFhFxHeQlErMXi91XH63qF5ix9OJpuKTfqIvT6N5wIJX00hnCEBsB3';
+const stripeClient = Stripe(STRIPE_KEY);
+
 initFirebase();
+
+document.addEventListener('DOMContentLoaded', function() {
+  const urlInput = document.getElementById('fImgUrl');
+  if (urlInput) {
+    urlInput.addEventListener('input', function() {
+      const p = document.getElementById('imgPreviews');
+      if (this.value) {
+        p.innerHTML = '<img src="'+this.value+'" class="img-preview" style="max-width:120px;max-height:160px;border-radius:6px;border:1px solid var(--border)" onerror="this.style.display='none'">';
+      } else {
+        p.innerHTML = '';
+      }
+    });
+  }
+});
+
 
 function checkAdmin() {
   const pw = prompt('Enter admin password:');
