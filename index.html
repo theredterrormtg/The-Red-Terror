@@ -201,6 +201,10 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
 .toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--red);border-radius:8px;padding:12px 20px;color:var(--text);font-size:14px;font-family:'Cinzel',serif;opacity:0;transition:opacity 0.3s;z-index:999;pointer-events:none;max-width:280px}
 .toast.show{opacity:1}
 @media(max-width:600px){nav{padding:0 1rem}.page{padding:1rem}.form-grid{grid-column:1fr}.nav-name{font-size:13px}.shop-hero h1{font-size:26px}.about-grid{grid-template-columns:1fr}.shop-hero-logo,.about-logo{width:220px;height:290px}}
+
+.cart-icon-btn{position:relative;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text);font-size:18px;transition:all 0.2s}
+.cart-icon-btn:hover{border-color:var(--red);background:var(--card)}
+.cart-icon-count{background:var(--red);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Cinzel',serif;font-weight:600}
 </style>
 </head>
 <body>
@@ -209,9 +213,15 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
     <img class="nav-logo" id="navLogo" alt="The Red Terror">
     <span class="nav-name">The Red Terror</span>
   </div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('shop',this)">Shop</button>
-    <button class="nav-tab" onclick="showPage('about',this)">About</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('shop',this)">Shop</button>
+      <button class="nav-tab" onclick="showPage('about',this)">About</button>
+    </div>
+    <button class="cart-icon-btn" onclick="openCart()" id="cartIconBtn">
+      <span>&#128722;</span>
+      <span class="cart-icon-count" id="cartIconCount">0</span>
+    </button>
   </div>
 </nav>
 
@@ -255,10 +265,7 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
     <div class="pay-block"><div class="pay-block-label">Shipping</div><div class="pay-block-val">Tracking on orders $50+</div></div>
   </div>
 
-  <div class="cart-bar">
-    <div class="cart-info"><strong id="cartCount">0 items</strong> in cart &mdash; <strong id="cartTotal">$0.00</strong></div>
-    <button class="checkout-btn" onclick="openCart()">View Cart &amp; Checkout</button>
-  </div>
+
 
   <!-- CART DRAWER -->
   <div class="cart-drawer" id="cartDrawer">
@@ -565,9 +572,8 @@ function toggleCart(id) {
 
 function updateCartBar() {
   const ids = Object.keys(cart);
-  const tot = ids.reduce((s,id) => { const l = listings.find(x => x.id==id); return s+(l?parseFloat(l.price||0):0); }, 0);
-  document.getElementById('cartCount').textContent = ids.length + ' item' + (ids.length!==1?'s':'');
-  document.getElementById('cartTotal').textContent = '$' + tot.toFixed(2);
+  const el = document.getElementById('cartIconCount');
+  if (el) el.textContent = ids.length;
 }
 
 function openCart() {
