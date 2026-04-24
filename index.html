@@ -309,6 +309,7 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;d
   <div class="lightbox" id="lightbox" onclick="closeLightboxOutside(event)">
     <button class="lightbox-close" onclick="closeLightbox()">&#10005;</button>
     <img class="lightbox-img" id="lightboxImg" src="" alt="">
+    <div id="lightboxThumbs" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center"></div>
     <div class="lightbox-name" id="lightboxName"></div>
     <div class="lightbox-set" id="lightboxSet"></div>
     <div class="lightbox-price" id="lightboxPrice"></div>
@@ -667,6 +668,15 @@ function openLightbox(id) {
   const imgs = (l.imgs && l.imgs.length) ? l.imgs : (l.img ? [l.img] : []);
   const imgSrc = imgs[0] || '';
   document.getElementById('lightboxImg').src = imgSrc;
+  // Show thumbnails if multiple images
+  const thumbsEl = document.getElementById('lightboxThumbs');
+  if (imgs.length > 1) {
+    thumbsEl.innerHTML = imgs.map((src,i) =>
+      `<img src="${src}" onclick="document.getElementById('lightboxImg').src='${src}';document.querySelectorAll('.lb-thumb').forEach(t=>t.style.opacity='0.5');this.style.opacity='1'" class="lb-thumb" style="width:56px;height:75px;object-fit:cover;border-radius:6px;border:2px solid ${i===0?'var(--teal2)':'transparent'};cursor:pointer;opacity:${i===0?'1':'0.5'}">`
+    ).join('');
+  } else {
+    thumbsEl.innerHTML = '';
+  }
   document.getElementById('lightboxName').textContent = l.name;
   document.getElementById('lightboxSet').textContent = (l.set||'') + (l.cond?' · '+l.cond:'');
   document.getElementById('lightboxPrice').textContent = '$' + parseFloat(l.price||0).toFixed(2);
